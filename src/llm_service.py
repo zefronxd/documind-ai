@@ -76,8 +76,15 @@ class GeminiProvider(LLMProvider):
             except Exception as exc:  # translate every SDK/network error into a safe message
                 last_exc = exc
                 code = getattr(exc, "code", None)
-                if code in (404, 503) or "not found" in str(exc).lower():
-                    continue  # model retired/unavailable -> try next fallback
+                text_err = str(exc).lower()
+                if (
+                    code in (404, 503)
+                    or isinstance(exc, TimeoutError)
+                    or "not found" in text_err
+                    or "timed out" in text_err
+                    or "timeout" in text_err
+                ):
+                    continue  # model retired/unavailable/too slow -> try next fallback
                 raise self._translate(exc) from None
         if response is None:
             raise self._translate(last_exc) from None
