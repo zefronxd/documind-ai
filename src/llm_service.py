@@ -8,7 +8,7 @@ from typing import TypeVar
 
 from pydantic import BaseModel, ValidationError, model_validator
 
-from utils.config import GEMINI_MODEL, LLM_TIMEOUT_SECONDS, MAX_LLM_CHARS, get_gemini_api_key
+from utils.config import GEMINI_FALLBACK_MODELS, GEMINI_MODEL, LLM_TIMEOUT_SECONDS, MAX_LLM_CHARS, get_gemini_api_key
 
 
 class LLMError(Exception):
@@ -63,12 +63,24 @@ class GeminiProvider(LLMProvider):
             temperature=temperature,
             response_mime_type="application/json" if json_mode else None,
         )
-        try:
-            response = self._client.models.generate_content(
-                model=self.model, contents=prompt, config=config
-            )
-        except Exception as exc:  # translate every SDK/network error into a safe message
-            raise self._translate(exc) from None
+        response = None
+        last_exc: Exception | None = None
+        candidates = [self.model] + [m for m in GEMINI_FALLBACK_MODELS if m != self.model]
+        for name in candidates:
+            try:
+                response = self._client.models.generate_content(
+                    model=name, contents=prompt, config=config
+                )
+                self.model = name  # remember the one that worked
+                break
+            except Exception as exc:  # translate every SDK/network error into a safe message
+                last_exc = exc
+                code = getattr(exc, "code", None)
+                if code in (404, 503) or "not found" in str(exc).lower():
+                    continue  # model retired/unavailable -> try next fallback
+                raise self._translate(exc) from None
+        if response is None:
+            raise self._translate(last_exc) from None
         text = getattr(response, "text", None)
         if not text:
             raise LLMError(
