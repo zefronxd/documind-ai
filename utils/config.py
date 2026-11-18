@@ -40,7 +40,8 @@ OCR_MAX_PAGES = _int_env("OCR_MAX_PAGES", 50)
 GEMINI_MODEL = "gemini-3.8-flash"
 # Tried in order if the main model returns "not found".
 GEMINI_FALLBACK_MODELS = ["gemini-3.5-flash-lite", "gemini-2.5-flash-lite"]
-LLM_TIMEOUT_SECONDS = _int_env("LLM_TIMEOUT_SECONDS", 60)
+# Set in code (ignores .env). Newer Gemini models "think" first, so they need more time.
+LLM_TIMEOUT_SECONDS = 180
 MAX_LLM_CHARS = _int_env("MAX_LLM_CHARS", 120000)
 
 CHUNK_SIZE = _int_env("CHUNK_SIZE", 1000)
