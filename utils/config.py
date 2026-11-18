@@ -36,7 +36,10 @@ SCANNED_MIN_CHARS_PER_PAGE = _int_env("SCANNED_MIN_CHARS_PER_PAGE", 50)
 OCR_DPI = _int_env("OCR_DPI", 200)
 OCR_MAX_PAGES = _int_env("OCR_MAX_PAGES", 50)
 
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "").strip() or "gemini-2.5-flash"
+# Model is set directly in code (no .env needed). gemini-2.5-flash is retired by Google.
+GEMINI_MODEL = "gemini-3.8-flash"
+# Tried in order if the main model returns "not found".
+GEMINI_FALLBACK_MODELS = ["gemini-3.5-flash-lite", "gemini-2.5-flash-lite"]
 LLM_TIMEOUT_SECONDS = _int_env("LLM_TIMEOUT_SECONDS", 60)
 MAX_LLM_CHARS = _int_env("MAX_LLM_CHARS", 120000)
 
